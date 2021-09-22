@@ -50,7 +50,7 @@ static ssize_t keyirq_read(struct file *file,
                         size_t count,
                         loff_t *loff);
 static int keyirq_release(struct inode *inode, struct file *file);
-static unsigned int keyirq_poll(struct file *filp, poll_table *wait);
+static unsigned int keyirq_poll(struct file *filp, struct poll_table_struct *wait);
 
 static struct file_operations ops = {
         .owner = THIS_MODULE,
@@ -98,16 +98,18 @@ error:
         return ret;
 }
 
-static unsigned int keyirq_poll(struct file *filp, poll_table *wait)
+static unsigned int keyirq_poll(struct file *filp, struct poll_table_struct *wait)
 {
-        unsigned int mask;
-        struct keyirq_device_struct *dev = filp->private_data;
+        unsigned int mask = 0;
+        struct keyirq_device_struct *dev = (struct keyirq_device_struct *)filp->private_data;
 
+        /* 调用poll_wait不会引起阻塞，只是将应用程序添加到poll_table中 */
         poll_wait(filp, &dev->r_wait, wait);
 
         if (atomic_read(&dev->releasekey))
                 mask = POLLIN | POLLRDNORM;
 
+        printk("poll release! mask = %d\n", mask);
         return mask;
 }
 
@@ -121,6 +123,8 @@ void timer_func(unsigned long arg)
 {
         int value = 0;
         struct keyirq_device_struct *dev = (struct keyirq_device_struct *)arg;
+
+        printk("Enter timer!\n");
 
         value = gpio_get_value(dev->keyirq[0].gpio);
         if (value == 0) {
@@ -140,7 +144,7 @@ static irqreturn_t key0_handler(int irq, void *dev_id)
         dev->timer.data = (unsigned long)dev;
         mod_timer(&dev->timer, jiffies + msecs_to_jiffies(10));
 
-        return IRQ_HANDLED;
+        return IRQ_RETVAL(IRQ_HANDLED);
 }
 
 int key_io_config(struct keyirq_device_struct *dev)
