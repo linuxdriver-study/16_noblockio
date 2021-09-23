@@ -4,6 +4,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/select.h>
 
 int main(int argc, char *argv[])
 {

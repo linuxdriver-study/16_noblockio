@@ -132,7 +132,7 @@ void timer_func(unsigned long arg)
                 //printk("KEY0 Press!\n");
         } else if (value == 1) {
                 //printk("KEY0 Release!\n");
-                wake_up(&dev->r_wait);
+                wake_up(&dev->r_wait);  /* 唤醒等待队列中的所有进程 */
         }
         //wake_up(&dev->r_wait);
 }
